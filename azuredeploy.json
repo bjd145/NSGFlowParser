@@ -1,0 +1,148 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "functionsStorageAccount": {
+            "type": "string"
+        },
+        "servicePlanName": {
+            "type": "string"
+        },
+        "siteName": {
+            "type": "string"
+        },
+        "nsgStorageAccountResourceGroup" : {
+            "type": "string"
+        },
+        "nsgStorageAccount" :{
+            "type": "string"
+        },
+        "sourceCodeRepositoryURL": {
+            "type": "string",
+            "defaultValue": "https://github.com/bjd145/Azure/Templates/NSGFlowParser/Code",
+            "metadata": {
+                "description": "Source code repository URL"
+            }
+        },
+        "sourceCodeBranch": {
+            "type": "string",
+            "defaultValue": "master",
+            "metadata": {
+                "description": "Sourcecode Repo branch"
+            }
+        }
+    },
+    "variables": {
+        "NSGFlowLog" : "insights-logs-networksecuritygroupflowevent/resourceId=/SUBSCRIPTIONS/{0}/RESOURCEGROUPS/{1}/PROVIDERS/MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/{2}/y={3}/m={4}/d={5}/h={6}/m=00/",
+        "AzureSubscription" : "2DEB88FE-ECA8-499A-ADB9-6E0EA8B6C1D2",
+        "NSGResourceGroup" : "CORE_INFRA_NETWORK_RG",
+        "NSGRules" : "JUMPSERVERS-NSG-RULE",
+        "customerId": "9b9403ae-360c-4145-af22-0de5d3596c45a",
+        "sharedKey": "ANPuHmuDYI5R5S52TuEc4hUrfpcDw+VM5n5XDC0b0qwsEkUGVVFldF//f8fCnHODrCerfUbXxDjVdGAFU1QRvg==",
+        "storageAccountId" : "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', parameters('nsgStorageAccountResourceGroup'), '/providers/Microsoft.Storage/storageAccounts/',  parameters('nsgStorageAccount'))]" 
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[parameters('functionsStorageAccount')]",
+            "apiVersion": "2016-01-01",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "kind": "Storage"
+        },
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "name": "[parameters('servicePlanName')]",
+            "apiVersion": "2016-09-01",
+            "location": "[resourceGroup().location]",
+            "kind": "functionapp",
+            "sku": {
+                "name": "Y1",
+                "tier": "Dynamic",
+                "size": "Y1",
+                "family": "Y",
+                "capacity": 0
+            },
+            "properties": {
+                "name": "[parameters('servicePlanName')]",
+                "computeMode": "Dynamic"
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "name": "[parameters('siteName')]",
+            "apiVersion": "2016-08-01",
+            "location": "[resourceGroup().location]",
+            "kind": "functionapp",
+            "properties": {
+                "enabled": true, 
+                "clientAffinityEnabled": false,
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('servicePlanName'))]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', parameters('servicePlanName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('functionsStorageAccount'))]"
+            ],
+            "resources": [
+                {
+                    "type": "config",
+                    "name": "appsettings",
+                    "apiVersion": "2016-08-01",
+                    "dependsOn": [
+                        "[concat('Microsoft.Web/sites/', parameters('siteName'))]",
+                        "[resourceId('Microsoft.Storage/storageAccounts', parameters('functionsStorageAccount'))]"
+                    ],
+                    "properties": {
+                        "NSGFlowLog" : "[variables('NSGFlowLog')]",
+                        "AzureSubscription" : "[variables('AzureSubscription')]",
+                        "NSGResourceGroup" : "[variables('NSGResourceGroup')]",
+                        "NSGRules" : "[variables('NSGRules')]",
+                        "customerId": "[variables('customerId')]",
+                        "sharedKey": "[variables('sharedKey')]",
+                        "logName": "NSGFlowLogs",
+                        "NSGStorageAccount" : "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('nsgStorageAccount'),';AccountKey=',listKeys(variables('storageAccountId'), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value)]",
+                        "AzureWebJobsDashboard" : "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('functionsStorageAccount'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('functionsStorageAccount')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value)]",
+                        "AzureWebJobsStorage" : "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('functionsStorageAccount'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('functionsStorageAccount')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value)]",
+                        "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING" : "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('functionsStorageAccount'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('functionsStorageAccount')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value)]",
+                        "WEBSITE_CONTENTSHARE": "[parameters('functionsStorageAccount')]",
+                        "FUNCTIONS_EXTENSION_VERSION" : "~1"
+                    }
+                },
+                { 
+                    "type": "config",
+                    "name": "web",
+                    "apiVersion": "2016-08-01",
+                    "properties": {
+                        "cors": {
+                            "allowedOrigins": [
+                                "https://functions.azure.com",
+                                "https://functions-staging.azure.com",
+                                "https://functions-next.azure.com"
+                            ]
+                        }
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', parameters('siteName'))]"
+                    ]
+                },
+                {
+                    "type": "sourcecontrols",
+                    "apiVersion": "2015-08-01",
+                    "name": "web",
+                    "properties": {
+                        "RepoUrl": "[parameters('sourceCodeRepositoryURL')]",
+                        "branch": "[parameters('sourceCodeBranch')]",
+                        "IsManualIntegration": "true"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites/', parameters('siteName'))]",
+                        "[resourceId('Microsoft.Web/sites/config', parameters('siteName'), 'appsettings')]"
+                    ]
+                  }           
+            ]
+        }
+    ]
+}
