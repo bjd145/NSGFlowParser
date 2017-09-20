@@ -64,7 +64,7 @@ public static void Run(TimerInfo myTimer, TraceWriter log)
     CloudBlobClient     blobClient;
     DateTime now = DateTime.UtcNow.AddHours(-1);
 
-    string nsgConnectionString  = System.Environment.GetEnvironmentVariable("bjddiagsa002_STORAGE", EnvironmentVariableTarget.Process);
+    string nsgConnectionString  = System.Environment.GetEnvironmentVariable("NSGStorageAccount", EnvironmentVariableTarget.Process);
     string nsgFlowLogLocation   = System.Environment.GetEnvironmentVariable("NSGFlowLog", EnvironmentVariableTarget.Process);
     string subscription         = System.Environment.GetEnvironmentVariable("AzureSubscription", EnvironmentVariableTarget.Process);
     string nsgResourceGroup     = System.Environment.GetEnvironmentVariable("NSGResourceGroup", EnvironmentVariableTarget.Process);

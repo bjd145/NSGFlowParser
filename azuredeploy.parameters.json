@@ -3,19 +3,28 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "functionsStorageAccount": {
-            "value": "bjdnsgflowlogsba5d"
+            "value": ""
         },
         "servicePlanName": {
-            "value": "BjdServicePlan"
+            "value": ""
         },
         "siteName": {
-            "value": "bjddiagsa003"
+            "value": ""
         },
         "nsgStorageAccountResourceGroup" : {
-            "value": "Core_Infra_Storage_RG"
+            "value": ""
         },
         "nsgStorageAccount" :{
-            "value": "bjddiagsa002"
+            "value": ""
+        },
+        "nsgRulesName": {
+            "value": ""
+        },
+        "omsCustomerId": {
+            "value": ""
+        },
+        "omsSharedKey": {
+            "value": ""
         }
     }
 }
