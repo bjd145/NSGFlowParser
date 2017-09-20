@@ -46,7 +46,7 @@
     },
     "variables": {
         "AzureSubscription" : "[concat(subscription().subscriptionId)]",
-        "NSGFlowLog" : "insights-logs-networksecuritygroupflowevent/resourceId=/SUBSCRIPTIONS/{0}/RESOURCEGROUPS/{1}/PROVIDERS/MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/{2}/y={3}/m={4}/d={5}/h={6}/m=00/",
+        "nsgFlowLogContainer" : "insights-logs-networksecuritygroupflowevent/resourceId=/SUBSCRIPTIONS/{0}/RESOURCEGROUPS/{1}/PROVIDERS/MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/{2}/y={3}/m={4}/d={5}/h={6}/m=00/",
         "storageAccountId" : "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', parameters('nsgStorageAccountResourceGroup'), '/providers/Microsoft.Storage/storageAccounts/',  parameters('nsgStorageAccount'))]" 
     },
     "resources": [
@@ -104,7 +104,7 @@
                         "[resourceId('Microsoft.Storage/storageAccounts', parameters('functionsStorageAccount'))]"
                     ],
                     "properties": {
-                        "NSGFlowLog" : "[parameters('nsgFlowLog')]",
+                        "NSGFlowLog" : "[variables('nsgFlowLogContainer')]",
                         "AzureSubscription" : "[variables('AzureSubscription')]",
                         "NSGResourceGroup" : "[parameters('nsgResourceGroup')]",
                         "NSGRules" : "[parameters('nsgRulesName')]",
