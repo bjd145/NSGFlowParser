@@ -78,11 +78,11 @@ public static void Run(TimerInfo myTimer, TraceWriter log)
     nsgContainer      = blobClient.GetContainerReference(nsgFlowLog);
     
     CloudBlockBlob currentNsgBlob = nsgContainer.GetBlockBlobReference(nsgBlob);
-    string nsgFlow = currentNsgBlob.DownloadText();
-
     log.Info($"C# Processing NSG Log at: " + currentNsgBlob.StorageUri.PrimaryUri );
 
+    string nsgFlow = currentNsgBlob.DownloadText();
     NsgFlowEvents nsgEvents = Newtonsoft.Json.JsonConvert.DeserializeObject<NsgFlowEvents>(nsgFlow);
+    
     foreach( var record in nsgEvents.records ) 
     {
         var datestring = DateTime.UtcNow.ToString("r");
