@@ -66,15 +66,12 @@ public static void Run(TimerInfo myTimer, TraceWriter log)
 
     string nsgConnectionString  = System.Environment.GetEnvironmentVariable("NSGStorageAccount", EnvironmentVariableTarget.Process);
     string nsgFlowLogLocation   = System.Environment.GetEnvironmentVariable("NSGFlowLog", EnvironmentVariableTarget.Process);
-    string subscription         = System.Environment.GetEnvironmentVariable("AzureSubscription", EnvironmentVariableTarget.Process);
-    string nsgResourceGroup     = System.Environment.GetEnvironmentVariable("NSGResourceGroup", EnvironmentVariableTarget.Process);
-    string nsgRules             = System.Environment.GetEnvironmentVariable("NSGRules", EnvironmentVariableTarget.Process);
     string customerId           = System.Environment.GetEnvironmentVariable("customerId", EnvironmentVariableTarget.Process);
     string sharedKey            = System.Environment.GetEnvironmentVariable("sharedKey", EnvironmentVariableTarget.Process);
     string logName              = System.Environment.GetEnvironmentVariable("LogName", EnvironmentVariableTarget.Process);
     string nsgBlob              = "PT1H.json";
 
-    string nsgFlowLog = String.Format( nsgFlowLogLocation, subscription, nsgResourceGroup, nsgRules, now.Year, now.ToString("MM"), now.ToString("dd"), now.ToString("HH") );
+    string nsgFlowLog = String.Format( nsgFlowLogLocation, now.Year, now.ToString("MM"), now.ToString("dd"), now.ToString("HH") );
     
     nsgStorageAccount = CloudStorageAccount.Parse(nsgConnectionString);
     blobClient        = nsgStorageAccount.CreateCloudBlobClient();

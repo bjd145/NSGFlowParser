@@ -23,6 +23,9 @@
         "nsgRulesName": {
             "type": "string"
         },
+        "nsgMACAddress" : {
+            "type": "string"
+        },
         "omsCustomerId": {
             "type": "string"
         },
@@ -46,7 +49,7 @@
     },
     "variables": {
         "AzureSubscription" : "[concat(subscription().subscriptionId)]",
-        "nsgFlowLogContainer" : "insights-logs-networksecuritygroupflowevent/resourceId=/SUBSCRIPTIONS/{0}/RESOURCEGROUPS/{1}/PROVIDERS/MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/{2}/y={3}/m={4}/d={5}/h={6}/m=00/",
+        "nsgFlowLogContainer" : "[concat('insights-logs-networksecuritygroupflowevent/resourceId=/SUBSCRIPTIONS/', toUpper(subscription().subscriptionId), '/RESOURCEGROUPS/', toUpper(parameters('nsgResourceGroup')), '/PROVIDERS/MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/', toUpper(parameters('nsgRulesName')), '/y={0}/m={1}/d={2}/h={3}/m=00/macAddress=', toUpper(parameters('nsgMACAddress')), '/')]",
         "storageAccountId" : "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', parameters('nsgStorageAccountResourceGroup'), '/providers/Microsoft.Storage/storageAccounts/',  parameters('nsgStorageAccount'))]" 
     },
     "resources": [
@@ -104,10 +107,7 @@
                         "[resourceId('Microsoft.Storage/storageAccounts', parameters('functionsStorageAccount'))]"
                     ],
                     "properties": {
-                        "NSGFlowLog" : "[variables('nsgFlowLogContainer')]",
-                        "AzureSubscription" : "[variables('AzureSubscription')]",
-                        "NSGResourceGroup" : "[parameters('nsgResourceGroup')]",
-                        "NSGRules" : "[parameters('nsgRulesName')]",
+                        "NSGFlowLog" : "[variables('nsgFlowLogContainer')]", 
                         "customerId": "[parameters('omsCustomerId')]",
                         "sharedKey": "[parameters('omsSharedKey')]",
                         "logName": "NSGFlowLogs",

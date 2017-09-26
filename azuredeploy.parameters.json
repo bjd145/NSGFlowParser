@@ -17,6 +17,9 @@
         "nsgStorageAccount" :{
             "value": ""
         },
+        "nsgMACAddress" : {
+            "value": ""
+        },
         "nsgRulesName": {
             "value": ""
         },
