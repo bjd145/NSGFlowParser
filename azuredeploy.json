@@ -45,8 +45,7 @@
         }
     },
     "variables": {
-        "AzureSubscription" : "[concat(subscription().subscriptionId)]",
-        "nsgFlowLogContinaer" : "insights-logs-networksecuritygroupflowevent",
+        "nsgFlowLogContainer" : "insights-logs-networksecuritygroupflowevent",
         "nsgFlowLogFolder" : "[concat('resourceId=/SUBSCRIPTIONS/', toUpper(subscription().subscriptionId), '/RESOURCEGROUPS/', toUpper(parameters('nsgResourceGroup')), '/PROVIDERS/MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/', toUpper(parameters('nsgRulesName')), '/y={0}/m={1}/d={2}/h={3}/m=00/')]",
         "storageAccountId" : "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', parameters('nsgStorageAccountResourceGroup'), '/providers/Microsoft.Storage/storageAccounts/',  parameters('nsgStorageAccount'))]" 
     },
