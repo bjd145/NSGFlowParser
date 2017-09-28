@@ -65,65 +65,63 @@ public static void Run(TimerInfo myTimer, TraceWriter log)
     DateTime now = DateTime.UtcNow.AddHours(-1);
 
     string nsgConnectionString  = System.Environment.GetEnvironmentVariable("NSGStorageAccount", EnvironmentVariableTarget.Process);
-    string nsgFlowLogLocation   = System.Environment.GetEnvironmentVariable("NSGFlowLog", EnvironmentVariableTarget.Process);
-    string customerId           = System.Environment.GetEnvironmentVariable("customerId", EnvironmentVariableTarget.Process);
-    string sharedKey            = System.Environment.GetEnvironmentVariable("sharedKey", EnvironmentVariableTarget.Process);
-    string logName              = System.Environment.GetEnvironmentVariable("LogName", EnvironmentVariableTarget.Process);
-    string nsgBlob              = "PT1H.json";
+    string nsgFlowLogContainer  = System.Environment.GetEnvironmentVariable("NSGFlowLogContainer", EnvironmentVariableTarget.Process);
+    string nsgFlowLogFolder     = System.Environment.GetEnvironmentVariable("NSGFlowLogFolder", EnvironmentVariableTarget.Process);
+    string omsCustomerId        = System.Environment.GetEnvironmentVariable("omsCustomerId", EnvironmentVariableTarget.Process);
+    string omsSharedKey         = System.Environment.GetEnvironmentVariable("omsSharedKey", EnvironmentVariableTarget.Process);
+    string omsLogName           = System.Environment.GetEnvironmentVariable("omsLogName", EnvironmentVariableTarget.Process);
 
-    string nsgFlowLog = String.Format( nsgFlowLogLocation, now.Year, now.ToString("MM"), now.ToString("dd"), now.ToString("HH") );
+    string nsgFlowLog = String.Format( nsgFlowLogFolder, now.Year, now.ToString("MM"), now.ToString("dd"), now.ToString("HH") );
     
     nsgStorageAccount = CloudStorageAccount.Parse(nsgConnectionString);
     blobClient        = nsgStorageAccount.CreateCloudBlobClient();
-    nsgContainer      = blobClient.GetContainerReference(nsgFlowLog);
+    nsgContainer      = blobClient.GetContainerReference(nsgFlowLogContainer);
     
-    CloudBlockBlob currentNsgBlob = nsgContainer.GetBlockBlobReference(nsgBlob);
-    log.Info($"C# Processing NSG Log at: " + currentNsgBlob.StorageUri.PrimaryUri );
-
-    string nsgFlow = currentNsgBlob.DownloadText();
-    NsgFlowEvents nsgEvents = Newtonsoft.Json.JsonConvert.DeserializeObject<NsgFlowEvents>(nsgFlow);
+    var directoryRef  = nsgContainer.GetDirectoryReference(nsgFlowLog);    
+    foreach (var macAddress in directoryRef.ListBlobs().OfType<CloudBlobDirectory>()) {
+        foreach( var currentBlobItem in macAddress.ListBlobs()) {
+            log.Info($"Processing NSG Log at: " + currentBlobItem.Uri.ToString() );
+   
+            string nsgFlowText = ((CloudBlockBlob)currentBlobItem).DownloadText();
+            NsgFlowEvents nsgEvents = Newtonsoft.Json.JsonConvert.DeserializeObject<NsgFlowEvents>(nsgFlowText);
     
-    foreach( var record in nsgEvents.records ) 
-    {
-        var datestring = DateTime.UtcNow.ToString("r");
-        char delimiter = '/';
-        string[] resources = record.resourceId.Split(delimiter);
+            foreach( var record in nsgEvents.records ) {
+                var datestring = DateTime.UtcNow.ToString("r");
+                char delimiter = '/';
+                string[] resources = record.resourceId.Split(delimiter);
 
-        foreach( var flows in record.properties.flows ) 
-        {
-            foreach( var flow in flows.flows ) 
-            {
-                foreach( string tupleflow in flow.flowTuples ) 
-                {
-                    delimiter = ',';
-                    string[] tuple = tupleflow.Split(delimiter);
-                    OmsNsgEvent omsEvent = new OmsNsgEvent 
-                    {
-                        SubscriptionId = resources[2],
-                        ResourceGroup = resources[4],
-                        NSG = resources[8],
-                        Rule = flows.rule,
-                        MAC =   flow.mac,
-                        DateTime = FromUnixTime(tuple[0]),
-                        SourceIp = tuple[1],
-                        SourcePort = tuple[3],
-                        DestinationIp = tuple[2],
-                        DestinationPort = tuple[4],
-                        TcpOrUdp = tuple[5],
-                        InOrOut = tuple[6],
-                        AllowOrDeny = tuple[7] 
-                    };
+                foreach( var flows in record.properties.flows ) {
+                    foreach( var flow in flows.flows ) {
+                        foreach( string tupleflow in flow.flowTuples ) {
+                            delimiter = ',';
+                            string[] tuple = tupleflow.Split(delimiter);
+                            OmsNsgEvent omsEvent = new OmsNsgEvent {
+                                SubscriptionId = resources[2],
+                                ResourceGroup = resources[4],
+                                NSG = resources[8],
+                                Rule = flows.rule,
+                                MAC =   flow.mac,
+                                DateTime = FromUnixTime(tuple[0]),
+                                SourceIp = tuple[1],
+                                SourcePort = tuple[3],
+                                DestinationIp = tuple[2],
+                                DestinationPort = tuple[4],
+                                TcpOrUdp = tuple[5],
+                                InOrOut = tuple[6],
+                                AllowOrDeny = tuple[7] 
+                            };
                     
-                    var json = Newtonsoft.Json.JsonConvert.SerializeObject(omsEvent);
-                    string stringToHash = "POST\n" + json.Length + "\napplication/json\n" + "x-ms-date:" + datestring + "\n/api/logs";
-                    string hashedString = BuildSignature(stringToHash, sharedKey);
-                    string signature = "SharedKey " + customerId + ":" + hashedString;
+                            var json = Newtonsoft.Json.JsonConvert.SerializeObject(omsEvent);
+                            string stringToHash = "POST\n" + json.Length + "\napplication/json\n" + "x-ms-date:" + datestring + "\n/api/logs";
+                            string hashedString = BuildSignature(stringToHash, omsSharedKey);
+                            string signature = "SharedKey " + omsCustomerId + ":" + hashedString;
                     
-                    log.Info($"C# Processing NSG Flow Hit - S: {omsEvent.SourceIp}:{omsEvent.SourcePort} D: {omsEvent.DestinationIp}:{omsEvent.DestinationPort}" );
-                    PostData(customerId, logName, signature,  datestring, json);
+                            log.Info($"C# Processing NSG Flow Hit - S: {omsEvent.SourceIp}:{omsEvent.SourcePort} D: {omsEvent.DestinationIp}:{omsEvent.DestinationPort}" );
+                            PostData(omsCustomerId, omsLogName, signature,  datestring, json);
+                        }
+                    }
                 }
             }
         }
     }
-
 }

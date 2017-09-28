@@ -23,9 +23,6 @@
         "nsgRulesName": {
             "type": "string"
         },
-        "nsgMACAddress" : {
-            "type": "string"
-        },
         "omsCustomerId": {
             "type": "string"
         },
@@ -49,7 +46,8 @@
     },
     "variables": {
         "AzureSubscription" : "[concat(subscription().subscriptionId)]",
-        "nsgFlowLogContainer" : "[concat('insights-logs-networksecuritygroupflowevent/resourceId=/SUBSCRIPTIONS/', toUpper(subscription().subscriptionId), '/RESOURCEGROUPS/', toUpper(parameters('nsgResourceGroup')), '/PROVIDERS/MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/', toUpper(parameters('nsgRulesName')), '/y={0}/m={1}/d={2}/h={3}/m=00/macAddress=', toUpper(parameters('nsgMACAddress')), '/')]",
+        "nsgFlowLogContinaer" : "insights-logs-networksecuritygroupflowevent",
+        "nsgFlowLogFolder" : "[concat('resourceId=/SUBSCRIPTIONS/', toUpper(subscription().subscriptionId), '/RESOURCEGROUPS/', toUpper(parameters('nsgResourceGroup')), '/PROVIDERS/MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/', toUpper(parameters('nsgRulesName')), '/y={0}/m={1}/d={2}/h={3}/m=00/')]",
         "storageAccountId" : "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', parameters('nsgStorageAccountResourceGroup'), '/providers/Microsoft.Storage/storageAccounts/',  parameters('nsgStorageAccount'))]" 
     },
     "resources": [
@@ -107,11 +105,12 @@
                         "[resourceId('Microsoft.Storage/storageAccounts', parameters('functionsStorageAccount'))]"
                     ],
                     "properties": {
-                        "NSGFlowLog" : "[variables('nsgFlowLogContainer')]", 
-                        "customerId": "[parameters('omsCustomerId')]",
-                        "sharedKey": "[parameters('omsSharedKey')]",
-                        "logName": "NSGFlowLogs",
-                        "NSGStorageAccount" : "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('nsgStorageAccount'),';AccountKey=',listKeys(variables('storageAccountId'), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value)]",
+                        "NSGFlowLogContainer": "[variables('nsgFlowLogContainer')]",
+                        "NSGFlowLogFolder" : "[variables('nsgFlowLogFolder')]", 
+                        "NSGStorageAccount" : "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('nsgStorageAccount'),';AccountKey=',listKeys(variables('storageAccountId'), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value)]",                        
+                        "omsCustomerId": "[parameters('omsCustomerId')]",
+                        "omsSharedKey": "[parameters('omsSharedKey')]",
+                        "omsLogName": "NSGFlowLogs",
                         "AzureWebJobsDashboard" : "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('functionsStorageAccount'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('functionsStorageAccount')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value)]",
                         "AzureWebJobsStorage" : "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('functionsStorageAccount'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('functionsStorageAccount')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value)]",
                         "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING" : "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('functionsStorageAccount'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('functionsStorageAccount')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value)]",
